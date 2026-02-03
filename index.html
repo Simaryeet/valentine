@@ -41,7 +41,6 @@
     margin: 0;
   }
 
-  
   .btnRow{
     position: absolute;
     left: 50%;
@@ -74,7 +73,6 @@
     z-index: 60;
   }
 
-  /* REAL NO (the one that runs) */
   #no{
     background:#fff;
     border: 2px solid rgba(0,0,0,.15);
@@ -86,15 +84,13 @@
       top  0.55s cubic-bezier(.16,1,.3,1);
   }
 
- 
   #noGhost{
     background:#fff;
     border: 2px solid rgba(0,0,0,.15);
     box-shadow: 0 18px 34px rgba(0,0,0,.16);
-    opacity: 0;         
-    pointer-events: none;   
+    opacity: 0;
+    pointer-events: none;
   }
-
 
   .result{
     position: fixed;
@@ -155,16 +151,12 @@
 
     <div class="btnRow" id="btnRow">
       <button id="yes">Yes🙂‍↕️</button>
-
-      <!-- NEW: invisible ghost NO so the YES+NO pair is truly centered -->
       <button id="noGhost">No😟</button>
     </div>
 
-    <!-- REAL NO (moves) -->
     <button id="no">No😟</button>
   </div>
 
-  <!-- After-YES screen -->
   <div id="result" class="result">
     <div class="resultCard">
       <h2>Ayeeeeeeeeee</h2>
@@ -175,9 +167,11 @@
     </div>
   </div>
 
+<!-- confetti library -->
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+
 <script>
   const card = document.getElementById("card");
-  const btnRow = document.getElementById("btnRow");
   const yes = document.getElementById("yes");
   const no  = document.getElementById("no");
   const noGhost = document.getElementById("noGhost");
@@ -189,7 +183,6 @@
     return !(a.right<b.left || a.left>b.right || a.bottom<b.top || a.top>b.bottom);
   }
 
-  // Put REAL NO exactly where the ghost NO is (so it starts side-by-side and centered)
   function initNoPosition(){
     const cardR = rect(card);
     const ghostR = rect(noGhost);
@@ -206,11 +199,9 @@
     const noR = rect(no);
     const yesR = rect(yes);
 
-    // mouse pos in card coords
     const mx = mouseClientX - cardR.left;
     const my = mouseClientY - cardR.top;
 
-    // NO pos in card coords (from styles)
     const nx = parseFloat(no.style.left) || 0;
     const ny = parseFloat(no.style.top)  || 0;
 
@@ -228,7 +219,6 @@
     let newX = nx + dx * step;
     let newY = ny + dy * step;
 
-    // Keep inside card (white box)
     const margin = 22;
     const minX = margin;
     const maxX = cardR.width - noR.width - margin;
@@ -238,7 +228,6 @@
     newX = clamp(newX, minX, maxX);
     newY = clamp(newY, minY, maxY);
 
-    // Never overlap YES
     const candidate = {
       left: cardR.left + newX,
       top:  cardR.top + newY,
@@ -254,23 +243,18 @@
     no.style.top  = newY + "px";
   }
 
-  // Proximity chase (same as your original)
   card.addEventListener("mousemove", (e) => {
     const noR = rect(no);
-    const mx = e.clientX;
-    const my = e.clientY;
-
     const cx = noR.left + noR.width/2;
     const cy = noR.top  + noR.height/2;
-    const dist = Math.hypot(cx - mx, cy - my);
+    const dist = Math.hypot(cx - e.clientX, cy - e.clientY);
 
     const triggerRadius = 170;
     if (dist < triggerRadius) {
-      runAway(mx, my);
+      runAway(e.clientX, e.clientY);
     }
   });
 
-  // Clicking NO: show text behind it
   no.addEventListener("click", (e) => {
     e.preventDefault();
     const msg = document.createElement("div");
@@ -284,10 +268,64 @@
     setTimeout(() => msg.remove(), 1400);
   });
 
-  // YES click -> show result
+  /* ❤️ HEART CONFETTI (more intense, 5 seconds) */
+  function heartConfetti5s(){
+    const duration = 5000;
+    const end = Date.now() + duration;
+
+    // Big opening heart blast
+    confetti({
+      particleCount: 220,
+      spread: 85,
+      startVelocity: 60,
+      scalar: 1.25,
+      shapes: ["heart"],
+      origin: { y: 0.72 }
+    });
+
+    // Continuous hearts + extra pops for 5 seconds
+    (function frame(){
+      // left stream
+      confetti({
+        particleCount: 8,
+        spread: 70,
+        startVelocity: 42,
+        scalar: 1.05,
+        shapes: ["heart"],
+        origin: { x: 0.15, y: 0.55 }
+      });
+
+      // right stream
+      confetti({
+        particleCount: 8,
+        spread: 70,
+        startVelocity: 42,
+        scalar: 1.05,
+        shapes: ["heart"],
+        origin: { x: 0.85, y: 0.55 }
+      });
+
+      // random “firework” heart burst
+      confetti({
+        particleCount: 12,
+        spread: 360,
+        startVelocity: 36,
+        ticks: 80,
+        scalar: 1.1,
+        shapes: ["heart"],
+        origin: { x: Math.random(), y: Math.random() * 0.45 + 0.12 }
+      });
+
+      if (Date.now() < end) requestAnimationFrame(frame);
+    })();
+  }
+
   yes.addEventListener("click", ()=>{
-    card.style.display="none";
-    result.classList.add("show");
+    heartConfetti5s();  // ❤️ 5 sec intense hearts
+    setTimeout(() => {
+      card.style.display="none";
+      result.classList.add("show");
+    }, 650);
   });
 
   window.addEventListener("load", initNoPosition);
@@ -296,4 +334,3 @@
 
 </body>
 </html>
-
