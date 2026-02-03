@@ -45,13 +45,14 @@
 .btnRow{
   position: absolute;
   left: 50%;
-  top: 43%;
-  transform: translateX(-50%); /* center the GROUP, not Yes */
-  display:flex;
+  top: 44%;
+  transform: translate(-50%, -50%); /* center the GROUP */
+  display: flex;
+  align-items: center;
+  justify-content: center;
   gap: 26px;
-  align-items:center;
-  justify-content:center;
-  z-index: 50;
+  width: fit-content;              /* IMPORTANT */
+  z-index: 10;
 }
 
   button{
