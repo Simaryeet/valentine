@@ -37,13 +37,14 @@
   .sub{
     font-size: 24px;
     opacity: .9;
+    margin: 0;
   }
 
-  /* Buttons start centered together */
+  /* Buttons start centered together and HIGHER */
   .btnRow{
     position: fixed;
     left: 50%;
-    top: 55%; /* MOVED UP */
+    top: 41%; /* moved UP and closer to the subtitle */
     transform: translate(-50%, -50%);
     display:flex;
     gap: 26px;
@@ -59,11 +60,13 @@
     font-weight: 900;
     box-shadow: 0 18px 34px rgba(0,0,0,.16);
     white-space: nowrap;
+    user-select:none;
   }
 
   #yes{
     background: linear-gradient(90deg, #ff2d55, #ff7a9a);
     color:#fff;
+    position: relative;
     z-index: 3000;
   }
 
@@ -72,9 +75,8 @@
     border: 2px solid rgba(0,0,0,.15);
     position: relative;
     z-index: 2500;
-    transition:
-      left 0.35s cubic-bezier(.22,.61,.36,1),
-      top  0.35s cubic-bezier(.22,.61,.36,1);
+    transition: left 0.55s cubic-bezier(.16,1,.3,1),
+                top  0.55s cubic-bezier(.16,1,.3,1);
   }
 
   /* After YES */
@@ -86,6 +88,7 @@
     align-items: center;
     justify-content: center;
     z-index: 6000;
+    padding: 30px;
   }
   .result.show{ display:flex; }
 
@@ -96,6 +99,17 @@
     box-shadow: 0 28px 75px rgba(0,0,0,.22);
     padding: 40px;
     text-align:center;
+  }
+
+  .resultCard h2{
+    margin:0 0 14px;
+    font-size: clamp(26px, 4vw, 44px);
+  }
+
+  .resultCard p{
+    margin:0 0 22px;
+    font-size: 20px;
+    opacity:.9;
   }
 
   .resultImg{
@@ -111,6 +125,7 @@
     width:100%;
     height:100%;
     object-fit:cover;
+    display:block;
   }
 </style>
 </head>
@@ -132,56 +147,92 @@
       <h2>Yesss 😭💖</h2>
       <p>You just made my whole day.</p>
       <div class="resultImg">
-        <img src="disapproval.jpg" />
+        <!-- Upload your image as disapproval.jpg -->
+        <img src="disapproval.jpg" alt="pic" />
       </div>
     </div>
   </div>
 
 <script>
   const yes = document.getElementById("yes");
-  const no = document.getElementById("no");
+  const no  = document.getElementById("no");
   const row = document.getElementById("btnRow");
   const card = document.getElementById("card");
   const result = document.getElementById("result");
 
   let detached = false;
+  let targetX = 0, targetY = 0;
 
   function rect(el){ return el.getBoundingClientRect(); }
   function overlap(a,b){
     return !(a.right<b.left||a.left>b.right||a.bottom<b.top||a.top>b.bottom);
   }
 
-  function runAway(){
+  function clamp(v, min, max){ return Math.max(min, Math.min(max, v)); }
+
+  function detachNo(){
+    if (detached) return;
+    const r = rect(no);
+    no.style.position = "fixed";
+    no.style.left = r.left + "px";
+    no.style.top  = r.top  + "px";
+    detached = true;
+
+    targetX = r.left;
+    targetY = r.top;
+  }
+
+  function moveNoAwayFromMouse(e){
+    detachNo();
+
     const noR = rect(no);
     const yesR = rect(yes);
 
-    if (!detached){
-      // lock NO's current position before switching to fixed
-      no.style.position = "fixed";
-      no.style.left = noR.left + "px";
-      no.style.top  = noR.top  + "px";
-      detached = true;
+    const noCX = noR.left + noR.width/2;
+    const noCY = noR.top  + noR.height/2;
+
+    // direction away from mouse (Tom & Jerry)
+    let dx = noCX - e.clientX;
+    let dy = noCY - e.clientY;
+
+    // normalize
+    const len = Math.hypot(dx, dy) || 1;
+    dx /= len; dy /= len;
+
+    // step size (bigger = runs more)
+    const step = 240;
+
+    let newX = noR.left + dx * step;
+    let newY = noR.top  + dy * step;
+
+    // keep on screen (so it never "disappears")
+    const margin = 16;
+    newX = clamp(newX, margin, window.innerWidth  - noR.width  - margin);
+    newY = clamp(newY, margin, window.innerHeight - noR.height - margin);
+
+    // prevent overlapping Yes
+    const candidate = { left:newX, top:newY, right:newX+noR.width, bottom:newY+noR.height };
+    if (overlap(candidate, yesR)){
+      // if it would hit YES, slide it sideways away from YES
+      if (newX < yesR.left) newX = yesR.left - noR.width - 30;
+      else newX = yesR.right + 30;
+
+      newX = clamp(newX, margin, window.innerWidth - noR.width - margin);
     }
 
-    const pad = 10;
-    const maxX = window.innerWidth - noR.width - pad;
-    const maxY = window.innerHeight - noR.height - pad;
+    // smooth: set new targets
+    targetX = newX;
+    targetY = newY;
 
-    for (let i=0;i<80;i++){
-      const x = pad + Math.random()*(maxX-pad);
-      const y = pad + Math.random()*(maxY-pad);
-
-      const test = {left:x,top:y,right:x+noR.width,bottom:y+noR.height};
-      if (!overlap(test, yesR)){
-        no.style.left = x+"px";
-        no.style.top  = y+"px";
-        return;
-      }
-    }
+    no.style.left = targetX + "px";
+    no.style.top  = targetY + "px";
   }
 
-  // ONLY moves on direct hover
-  no.addEventListener("mouseenter", runAway);
+  // ONLY run when hovering directly over the NO button
+  no.addEventListener("mouseenter", (e) => moveNoAwayFromMouse(e));
+
+  // while you keep hovering and chasing, it keeps dodging smoothly
+  no.addEventListener("mousemove", (e) => moveNoAwayFromMouse(e));
 
   yes.addEventListener("click", ()=>{
     card.style.display="none";
