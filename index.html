@@ -17,15 +17,14 @@
     overflow:hidden;
   }
 
-  /* Main card */
   .card{
     width: min(980px, 95vw);
-    min-height: 560px;
-    margin: 60px auto;
-    background: rgba(255,255,255,0.92);
+    min-height: 520px;
+    margin: 50px auto;
+    background: rgba(255,255,255,0.93);
     border-radius: 34px;
     box-shadow: 0 28px 75px rgba(0,0,0,.18);
-    padding: 60px 60px 120px;
+    padding: 60px 60px 80px;
     text-align:center;
   }
 
@@ -37,19 +36,16 @@
 
   .sub{
     font-size: 24px;
-    margin: 0 0 0;
     opacity: .9;
   }
 
-  /* Buttons row: centered together */
+  /* Buttons start centered together */
   .btnRow{
     position: fixed;
     left: 50%;
-    top: 66%;
+    top: 55%; /* MOVED UP */
     transform: translate(-50%, -50%);
     display:flex;
-    align-items:center;
-    justify-content:center;
     gap: 26px;
     z-index: 2000;
   }
@@ -62,15 +58,13 @@
     font-size: 20px;
     font-weight: 900;
     box-shadow: 0 18px 34px rgba(0,0,0,.16);
-    user-select:none;
     white-space: nowrap;
   }
 
   #yes{
     background: linear-gradient(90deg, #ff2d55, #ff7a9a);
     color:#fff;
-    position: relative;
-    z-index: 3000; /* always above */
+    z-index: 3000;
   }
 
   #no{
@@ -78,11 +72,12 @@
     border: 2px solid rgba(0,0,0,.15);
     position: relative;
     z-index: 2500;
-    transition: left 0.35s cubic-bezier(.22,.61,.36,1),
-                top  0.35s cubic-bezier(.22,.61,.36,1);
+    transition:
+      left 0.35s cubic-bezier(.22,.61,.36,1),
+      top  0.35s cubic-bezier(.22,.61,.36,1);
   }
 
-  /* After YES screen */
+  /* After YES */
   .result{
     position: fixed;
     inset: 0;
@@ -90,7 +85,6 @@
     display: none;
     align-items: center;
     justify-content: center;
-    padding: 30px;
     z-index: 6000;
   }
   .result.show{ display:flex; }
@@ -100,19 +94,8 @@
     background: rgba(255,255,255,0.95);
     border-radius: 30px;
     box-shadow: 0 28px 75px rgba(0,0,0,.22);
-    padding: 40px 30px;
+    padding: 40px;
     text-align:center;
-  }
-
-  .resultCard h2{
-    margin: 0 0 18px;
-    font-size: clamp(26px, 4vw, 44px);
-  }
-
-  .resultCard p{
-    margin: 0 0 26px;
-    font-size: 20px;
-    opacity: 0.9;
   }
 
   .resultImg{
@@ -122,14 +105,12 @@
     border-radius: 24px;
     overflow: hidden;
     box-shadow: 0 18px 55px rgba(0,0,0,.22);
-    background: #fff;
   }
 
   .resultImg img{
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display:block;
+    width:100%;
+    height:100%;
+    object-fit:cover;
   }
 </style>
 </head>
@@ -141,82 +122,71 @@
     <div class="sub">there’s only one right answer</div>
   </div>
 
-  <!-- centered pair -->
   <div class="btnRow" id="btnRow">
     <button id="yes">Yes 😭💖</button>
     <button id="no">No 😐</button>
   </div>
 
-  <!-- after-YES screen -->
   <div id="result" class="result">
     <div class="resultCard">
       <h2>Yesss 😭💖</h2>
-      <p>You just made my whole day. Happy Valentine’s Day 😌</p>
+      <p>You just made my whole day.</p>
       <div class="resultImg">
-        <!-- Put your image in repo root as: disapproval.jpg -->
-        <img src="disapproval.jpg" alt="valentine pic" />
+        <img src="disapproval.jpg" />
       </div>
     </div>
   </div>
 
 <script>
-  const yesBtn = document.getElementById("yes");
-  const noBtn = document.getElementById("no");
-  const btnRow = document.getElementById("btnRow");
+  const yes = document.getElementById("yes");
+  const no = document.getElementById("no");
+  const row = document.getElementById("btnRow");
   const card = document.getElementById("card");
   const result = document.getElementById("result");
 
+  let detached = false;
+
   function rect(el){ return el.getBoundingClientRect(); }
-  function overlaps(a, b){
-    return !(a.right < b.left || a.left > b.right || a.bottom < b.top || a.top > b.bottom);
+  function overlap(a,b){
+    return !(a.right<b.left||a.left>b.right||a.bottom<b.top||a.top>b.bottom);
   }
 
-  // Move NO anywhere on page, but never overlap YES
-  function moveNoAnywhere(){
-    const noR = rect(noBtn);
-    const yesR = rect(yesBtn);
+  function runAway(){
+    const noR = rect(no);
+    const yesR = rect(yes);
 
-    const padding = 10;
-    const maxX = window.innerWidth - noR.width - padding;
-    const maxY = window.innerHeight - noR.height - padding;
+    if (!detached){
+      // lock NO's current position before switching to fixed
+      no.style.position = "fixed";
+      no.style.left = noR.left + "px";
+      no.style.top  = noR.top  + "px";
+      detached = true;
+    }
 
-    for (let i = 0; i < 80; i++){
-      const x = padding + Math.random() * Math.max(0, maxX - padding);
-      const y = padding + Math.random() * Math.max(0, maxY - padding);
+    const pad = 10;
+    const maxX = window.innerWidth - noR.width - pad;
+    const maxY = window.innerHeight - noR.height - pad;
 
-      const candidate = {
-        left: x, top: y,
-        right: x + noR.width,
-        bottom: y + noR.height
-      };
+    for (let i=0;i<80;i++){
+      const x = pad + Math.random()*(maxX-pad);
+      const y = pad + Math.random()*(maxY-pad);
 
-      if (!overlaps(candidate, yesR)){
-        // switch NO to fixed absolute page positioning the first time it runs
-        noBtn.style.position = "fixed";
-        noBtn.style.left = x + "px";
-        noBtn.style.top  = y + "px";
+      const test = {left:x,top:y,right:x+noR.width,bottom:y+noR.height};
+      if (!overlap(test, yesR)){
+        no.style.left = x+"px";
+        no.style.top  = y+"px";
         return;
       }
     }
   }
 
-  // IMPORTANT: ONLY move when hovering directly over NO
-  noBtn.addEventListener("mouseenter", () => {
-    moveNoAnywhere();
-  });
+  // ONLY moves on direct hover
+  no.addEventListener("mouseenter", runAway);
 
-  // Clicking YES: hide question + buttons, show final screen
-  yesBtn.addEventListener("click", () => {
-    card.style.display = "none";
-    btnRow.style.display = "none";
+  yes.addEventListener("click", ()=>{
+    card.style.display="none";
+    row.style.display="none";
     result.classList.add("show");
-  });
-
-  // If user resizes, keep NO from accidentally overlapping YES
-  window.addEventListener("resize", () => {
-    const noR = rect(noBtn);
-    const yesR = rect(yesBtn);
-    if (overlaps(noR, yesR)) moveNoAnywhere();
   });
 </script>
 
