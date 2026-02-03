@@ -32,13 +32,11 @@
   h1{
     margin:0 0 12px;
     font-size: clamp(38px, 5.5vw, 78px);
-    letter-spacing: -0.02em;
   }
 
   .sub{
     font-size: 24px;
     opacity: .9;
-    margin: 0;
   }
 
   .btnRow{
@@ -47,10 +45,7 @@
     top: 44%;
     transform: translate(-50%, -50%);
     display: flex;
-    align-items: center;
-    justify-content: center;
     gap: 26px;
-    width: fit-content;
     z-index: 10;
   }
 
@@ -62,14 +57,11 @@
     font-size: 20px;
     font-weight: 900;
     box-shadow: 0 18px 34px rgba(0,0,0,.16);
-    white-space: nowrap;
-    user-select:none;
   }
 
   #yes{
     background: linear-gradient(90deg, #ff2d55, #ff7a9a);
     color:#fff;
-    position: relative;
     z-index: 60;
   }
 
@@ -78,18 +70,15 @@
     border: 2px solid rgba(0,0,0,.15);
     position: absolute;
     z-index: 55;
-    left: 0; top: 0;
-    transition:
-      left 0.55s cubic-bezier(.16,1,.3,1),
-      top  0.55s cubic-bezier(.16,1,.3,1);
+    transition: left 0.55s cubic-bezier(.16,1,.3,1),
+                top  0.55s cubic-bezier(.16,1,.3,1);
   }
 
   #noGhost{
     background:#fff;
     border: 2px solid rgba(0,0,0,.15);
-    box-shadow: 0 18px 34px rgba(0,0,0,.16);
     opacity: 0;
-    pointer-events: none;
+    pointer-events:none;
   }
 
   .result{
@@ -100,236 +89,157 @@
     align-items: center;
     justify-content: center;
     z-index: 7000;
-    padding: 30px;
   }
   .result.show{ display:flex; }
 
   .resultCard{
-    width: min(900px, 96vw);
     background: rgba(255,255,255,0.95);
     border-radius: 30px;
-    box-shadow: 0 28px 75px rgba(0,0,0,.22);
     padding: 40px;
     text-align:center;
-  }
-
-  .resultCard h2{
-    margin:0 0 14px;
-    font-size: clamp(26px, 4vw, 44px);
-  }
-
-  .resultCard p{
-    margin:0 0 22px;
-    font-size: 20px;
-    opacity:.9;
+    box-shadow: 0 28px 75px rgba(0,0,0,.22);
   }
 
   .resultImg{
-    width: min(420px, 80vw);
-    height: min(420px, 80vw);
+    width: 420px;
+    height: 420px;
     margin: 0 auto;
     border-radius: 24px;
     overflow: hidden;
-    box-shadow: 0 18px 55px rgba(0,0,0,.22);
-    background:#fff;
   }
 
   .resultImg img{
     width:100%;
     height:100%;
     object-fit:cover;
-    display:block;
   }
 </style>
 </head>
 
 <body>
 
-  <div id="card" class="card">
-    <h1>Will you be my Valentine😛?</h1>
-    <div class="sub">there’s only one right answer</div>
+<div id="card" class="card">
+  <h1>Will you be my Valentine😛?</h1>
+  <div class="sub">there’s only one right answer</div>
 
-    <div class="btnRow" id="btnRow">
-      <button id="yes">Yes🙂‍↕️</button>
-      <button id="noGhost">No😟</button>
-    </div>
-
-    <button id="no">No😟</button>
+  <div class="btnRow">
+    <button id="yes">Yes🙂‍↕️</button>
+    <button id="noGhost">No😟</button>
   </div>
 
-  <div id="result" class="result">
-    <div class="resultCard">
-      <h2>Ayeeeeeeeeee</h2>
-      <p>you got good taste😋</p>
-      <div class="resultImg">
-        <img src="disapproval.jpg" alt="yes pic">
-      </div>
+  <button id="no">No😟</button>
+</div>
+
+<div id="result" class="result">
+  <div class="resultCard">
+    <h2>Ayeeeeeeeeee</h2>
+    <p>you got good taste😋</p>
+    <div class="resultImg">
+      <img src="disapproval.jpg">
     </div>
   </div>
+</div>
 
-<!-- confetti library -->
+<!-- CONFETTI LIBRARY -->
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
 
 <script>
   const card = document.getElementById("card");
   const yes = document.getElementById("yes");
-  const no  = document.getElementById("no");
+  const no = document.getElementById("no");
   const noGhost = document.getElementById("noGhost");
   const result = document.getElementById("result");
 
   function rect(el){ return el.getBoundingClientRect(); }
-  function clamp(v, min, max){ return Math.max(min, Math.min(max, v)); }
-  function overlaps(a,b){
-    return !(a.right<b.left || a.left>b.right || a.bottom<b.top || a.top>b.bottom);
+  function clamp(v,min,max){ return Math.max(min,Math.min(max,v)); }
+
+  function initNo(){
+    const c = rect(card);
+    const g = rect(noGhost);
+    no.style.left = (g.left - c.left) + "px";
+    no.style.top  = (g.top  - c.top)  + "px";
   }
 
-  function initNoPosition(){
-    const cardR = rect(card);
-    const ghostR = rect(noGhost);
+  function runAway(x,y){
+    const c = rect(card);
+    const n = rect(no);
+    let nx = n.left - c.left;
+    let ny = n.top  - c.top;
 
-    const x = ghostR.left - cardR.left;
-    const y = ghostR.top  - cardR.top;
+    let dx = (nx + n.width/2) - (x - c.left);
+    let dy = (ny + n.height/2) - (y - c.top);
+    let d = Math.hypot(dx,dy)||1;
+    dx/=d; dy/=d;
 
-    no.style.left = x + "px";
-    no.style.top  = y + "px";
+    nx += dx*180;
+    ny += dy*180;
+
+    nx = clamp(nx,20,c.width-n.width-20);
+    ny = clamp(ny,20,c.height-n.height-20);
+
+    no.style.left = nx+"px";
+    no.style.top  = ny+"px";
   }
 
-  function runAway(mouseClientX, mouseClientY){
-    const cardR = rect(card);
-    const noR = rect(no);
-    const yesR = rect(yes);
-
-    const mx = mouseClientX - cardR.left;
-    const my = mouseClientY - cardR.top;
-
-    const nx = parseFloat(no.style.left) || 0;
-    const ny = parseFloat(no.style.top)  || 0;
-
-    const cx = nx + noR.width/2;
-    const cy = ny + noR.height/2;
-
-    let dx = cx - mx;
-    let dy = cy - my;
-
-    const dist = Math.hypot(dx, dy) || 1;
-    dx /= dist; dy /= dist;
-
-    const step = 180;
-
-    let newX = nx + dx * step;
-    let newY = ny + dy * step;
-
-    const margin = 22;
-    const minX = margin;
-    const maxX = cardR.width - noR.width - margin;
-    const minY = margin;
-    const maxY = cardR.height - noR.height - margin;
-
-    newX = clamp(newX, minX, maxX);
-    newY = clamp(newY, minY, maxY);
-
-    const candidate = {
-      left: cardR.left + newX,
-      top:  cardR.top + newY,
-      right: cardR.left + newX + noR.width,
-      bottom: cardR.top + newY + noR.height
-    };
-    if (overlaps(candidate, yesR)) {
-      if (candidate.left < yesR.left) newX = clamp(newX - 240, minX, maxX);
-      else newX = clamp(newX + 240, minX, maxX);
-    }
-
-    no.style.left = newX + "px";
-    no.style.top  = newY + "px";
-  }
-
-  card.addEventListener("mousemove", (e) => {
-    const noR = rect(no);
-    const cx = noR.left + noR.width/2;
-    const cy = noR.top  + noR.height/2;
-    const dist = Math.hypot(cx - e.clientX, cy - e.clientY);
-
-    const triggerRadius = 170;
-    if (dist < triggerRadius) {
-      runAway(e.clientX, e.clientY);
-    }
+  card.addEventListener("mousemove",e=>{
+    const n = rect(no);
+    const d = Math.hypot(
+      n.left+n.width/2-e.clientX,
+      n.top+n.height/2-e.clientY
+    );
+    if(d<170) runAway(e.clientX,e.clientY);
   });
 
-  no.addEventListener("click", (e) => {
+  no.addEventListener("click",e=>{
     e.preventDefault();
-    const msg = document.createElement("div");
-    msg.textContent = "smh wrong answer vedanti";
-    msg.style.position = "absolute";
-    msg.style.left = (parseFloat(no.style.left) + 10) + "px";
-    msg.style.top  = (parseFloat(no.style.top) + 70) + "px";
-    msg.style.fontWeight = "800";
-    msg.style.opacity = "0.9";
-    card.appendChild(msg);
-    setTimeout(() => msg.remove(), 1400);
+    const t=document.createElement("div");
+    t.textContent="smh wrong answer vedanti";
+    t.style.position="absolute";
+    t.style.left=no.style.left;
+    t.style.top=(parseFloat(no.style.top)+70)+"px";
+    t.style.fontWeight="800";
+    card.appendChild(t);
+    setTimeout(()=>t.remove(),1400);
   });
 
-  /* ❤️ HEART CONFETTI (more intense, 5 seconds) */
-  function heartConfetti5s(){
-    const duration = 5000;
-    const end = Date.now() + duration;
+  /* ❤️ 5 SECOND INTENSE HEART CONFETTI */
+  function hearts5s(){
+    const end = Date.now()+5000;
+    const h1 = confetti.shapeFromText({text:"❤️",scalar:2});
+    const h2 = confetti.shapeFromText({text:"💖",scalar:2});
+    const h3 = confetti.shapeFromText({text:"💕",scalar:2});
 
-    // Big opening heart blast
     confetti({
-      particleCount: 220,
-      spread: 85,
-      startVelocity: 60,
-      scalar: 1.25,
-      shapes: ["heart"],
-      origin: { y: 0.72 }
+      particleCount:220,
+      spread:90,
+      startVelocity:60,
+      shapes:[h1,h2,h3],
+      origin:{y:.7}
     });
 
-    // Continuous hearts + extra pops for 5 seconds
     (function frame(){
-      // left stream
       confetti({
-        particleCount: 8,
-        spread: 70,
-        startVelocity: 42,
-        scalar: 1.05,
-        shapes: ["heart"],
-        origin: { x: 0.15, y: 0.55 }
+        particleCount:12,
+        spread:360,
+        startVelocity:40,
+        ticks:120,
+        shapes:[h1,h2,h3],
+        origin:{x:Math.random(),y:Math.random()*0.5}
       });
-
-      // right stream
-      confetti({
-        particleCount: 8,
-        spread: 70,
-        startVelocity: 42,
-        scalar: 1.05,
-        shapes: ["heart"],
-        origin: { x: 0.85, y: 0.55 }
-      });
-
-      // random “firework” heart burst
-      confetti({
-        particleCount: 12,
-        spread: 360,
-        startVelocity: 36,
-        ticks: 80,
-        scalar: 1.1,
-        shapes: ["heart"],
-        origin: { x: Math.random(), y: Math.random() * 0.45 + 0.12 }
-      });
-
-      if (Date.now() < end) requestAnimationFrame(frame);
+      if(Date.now()<end) requestAnimationFrame(frame);
     })();
   }
 
-  yes.addEventListener("click", ()=>{
-    heartConfetti5s();  // ❤️ 5 sec intense hearts
-    setTimeout(() => {
+  yes.addEventListener("click",()=>{
+    hearts5s();
+    setTimeout(()=>{
       card.style.display="none";
       result.classList.add("show");
-    }, 650);
+    },600);
   });
 
-  window.addEventListener("load", initNoPosition);
-  window.addEventListener("resize", initNoPosition);
+  window.addEventListener("load",initNo);
+  window.addEventListener("resize",initNo);
 </script>
 
 </body>
