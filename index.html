@@ -26,8 +26,7 @@
     box-shadow: 0 28px 75px rgba(0,0,0,.18);
     padding: 60px 60px 90px;
     text-align:center;
-    position: relative; /* IMPORTANT: makes NO stay inside this box */
-    overflow: hidden;   /* keeps NO from escaping visually */
+    position: relative;
   }
 
   h1{
@@ -42,17 +41,17 @@
     margin: 0;
   }
 
-  /* Button row is INSIDE the card now */
+  /* Keep YES fixed in place, and NO starts next to it */
   .btnRow{
     position: absolute;
     left: 50%;
-    top: 46%;                /* brings buttons up */
+    top: 43%;
     transform: translate(-50%, -50%);
     display:flex;
     gap: 26px;
     align-items:center;
     justify-content:center;
-    z-index: 20;
+    z-index: 50;
   }
 
   button{
@@ -71,75 +70,19 @@
     background: linear-gradient(90deg, #ff2d55, #ff7a9a);
     color:#fff;
     position: relative;
-    z-index: 30; /* always above */
+    z-index: 60;
   }
 
-  /* NO starts in the row, then becomes absolute inside the card */
+  /* NO will be absolute inside the card once we "activate" it */
   #no{
     background:#fff;
     border: 2px solid rgba(0,0,0,.15);
-    position: relative;
-    z-index: 25;
+    position: absolute;         /* important */
+    z-index: 55;
+    left: 0; top: 0;            /* set by JS */
     transition:
       left 0.55s cubic-bezier(.16,1,.3,1),
       top  0.55s cubic-bezier(.16,1,.3,1);
-  }
-
-  /* placeholder slot to keep YES from shifting when NO detaches */
-  #noSlot{
-    display:none;
-    width: 0px;
-    height: 0px;
-  }
-  #noSlot.active{
-    display:inline-block;
-    width: var(--noW, 140px);
-    height: var(--noH, 56px);
-  }
-
-  /* Message that appears when NO is clicked */
-  .wrongMsg{
-    position: absolute;
-    left: 50%;
-    top: calc(46% + 68px);
-    transform: translateX(-50%);
-    font-size: 20px;
-    font-weight: 700;
-    opacity: 0;
-    transition: opacity 0.15s ease;
-    z-index: 15;
-    pointer-events: none;
-  }
-  .wrongMsg.show{ opacity: 1; }
-
-  /* Bottom hover image tray */
-  .noHoverTray{
-    position: fixed;
-    left: 50%;
-    bottom: -520px;
-    transform: translateX(-50%);
-    width: min(520px, 92vw);
-    height: min(360px, 45vh);
-    border-radius: 22px;
-    overflow: hidden;
-    box-shadow: 0 26px 70px rgba(0,0,0,.28);
-    z-index: 5000;
-    opacity: 0;
-    transition:
-      bottom 0.35s cubic-bezier(.16,1,.3,1),
-      opacity 0.12s linear;
-    background: #fff;
-    pointer-events:none;
-  }
-  .noHoverTray.show{
-    bottom: 18px;
-    opacity: 1;
-  }
-  .noHoverTray img{
-    width:100%;
-    height:100%;
-    object-fit: cover;
-    display:block;
   }
 
   /* After YES screen */
@@ -184,6 +127,7 @@
     box-shadow: 0 18px 55px rgba(0,0,0,.22);
     background:#fff;
   }
+
   .resultImg img{
     width:100%;
     height:100%;
@@ -201,19 +145,10 @@
 
     <div class="btnRow" id="btnRow">
       <button id="yes">Yes 😭💖</button>
-
-      <!-- placeholder slot to stop YES shifting when NO detaches -->
-      <span id="noSlot"></span>
-
-      <button id="no">No 😐</button>
+      <!-- NO is NOT in the flex row, it is absolutely positioned -->
     </div>
 
-    <div id="wrongMsg" class="wrongMsg">smh wrong answer vedanti</div>
-  </div>
-
-  <!-- NO hover image tray (slides up from bottom) -->
-  <div id="noTray" class="noHoverTray">
-    <img src="no-hover.jpg" alt="no hover pic">
+    <button id="no">No 😐</button>
   </div>
 
   <!-- After-YES screen -->
@@ -228,157 +163,140 @@
   </div>
 
 <script>
+  const card = document.getElementById("card");
+  const btnRow = document.getElementById("btnRow");
   const yes = document.getElementById("yes");
   const no  = document.getElementById("no");
-  const noSlot = document.getElementById("noSlot");
-  const noTray = document.getElementById("noTray");
-  const row = document.getElementById("btnRow");
-  const card = document.getElementById("card");
   const result = document.getElementById("result");
-  const wrongMsg = document.getElementById("wrongMsg");
-
-  let detached = false;
 
   function rect(el){ return el.getBoundingClientRect(); }
   function clamp(v, min, max){ return Math.max(min, Math.min(max, v)); }
-
-  function detachNoIntoCard(){
-    if (detached) return;
-
-    // Size + position of NO relative to the viewport
-    const noR = rect(no);
-    const cardR = rect(card);
-
-    // Keep YES from shifting
-    noSlot.classList.add("active");
-    noSlot.style.setProperty("--noW", noR.width + "px");
-    noSlot.style.setProperty("--noH", noR.height + "px");
-
-    // Convert NO to absolute inside the card
-    no.style.position = "absolute";
-    no.style.left = (noR.left - cardR.left) + "px";
-    no.style.top  = (noR.top  - cardR.top)  + "px";
-
-    detached = true;
+  function overlaps(a,b){
+    return !(a.right<b.left || a.left>b.right || a.bottom<b.top || a.top>b.bottom);
   }
 
-  function moveNoAwayFromMouse(e){
-    detachNoIntoCard();
-
+  // Place NO initially next to YES (so it starts side-by-side)
+  function placeNoNextToYes(){
     const cardR = rect(card);
+    const rowR  = rect(btnRow);
+    const yesR  = rect(yes);
+    const noR   = rect(no);
+
+    // Put NO to the right of YES with same vertical alignment as the row
+    const startX = (yesR.right - cardR.left) + 26; // gap
+    const startY = (rowR.top - cardR.left); // wrong axis guard (fixed below)
+  }
+
+  function initNoPosition(){
+    const cardR = rect(card);
+    const rowR  = rect(btnRow);
+    const yesR  = rect(yes);
+    const noR   = rect(no);
+
+    const x = (yesR.right - cardR.left) + 26; // right of YES
+    const y = (rowR.top - cardR.top) + (rowR.height/2 - noR.height/2); // vertically centered on row
+
+    no.style.left = x + "px";
+    no.style.top  = y + "px";
+  }
+
+  // Run away behavior inside the white card
+  function runAway(mouseClientX, mouseClientY){
+    const cardR = rect(card);
+    const noR = rect(no);
     const yesR = rect(yes);
 
-    // mouse position in CARD coordinates
-    const mx = e.clientX - cardR.left;
-    const my = e.clientY - cardR.top;
+    // mouse pos in card coords
+    const mx = mouseClientX - cardR.left;
+    const my = mouseClientY - cardR.top;
 
-    const noLeft = parseFloat(no.style.left) || 0;
-    const noTop  = parseFloat(no.style.top)  || 0;
-    const noW = no.offsetWidth;
-    const noH = no.offsetHeight;
+    // NO pos in card coords (from styles)
+    const nx = parseFloat(no.style.left) || 0;
+    const ny = parseFloat(no.style.top)  || 0;
 
-    const noCX = noLeft + noW/2;
-    const noCY = noTop  + noH/2;
+    const cx = nx + noR.width/2;
+    const cy = ny + noR.height/2;
 
-    // move away from mouse
-    let dx = noCX - mx;
-    let dy = noCY - my;
-    const len = Math.hypot(dx, dy) || 1;
-    dx /= len; dy /= len;
+    let dx = cx - mx;
+    let dy = cy - my;
 
-    const step = 150;
+    const dist = Math.hypot(dx, dy) || 1;
+    dx /= dist; dy /= dist;
 
-    let newLeft = noLeft + dx * step;
-    let newTop  = noTop  + dy * step;
+    // Step size
+    const step = 180;
 
-    // clamp INSIDE the card
-    const margin = 18;
+    let newX = nx + dx * step;
+    let newY = ny + dy * step;
+
+    // Keep inside card (white box)
+    const margin = 22;
     const minX = margin;
-    const maxX = card.clientWidth  - noW - margin;
+    const maxX = cardR.width - noR.width - margin;
     const minY = margin;
-    const maxY = card.clientHeight - noH - margin;
+    const maxY = cardR.height - noR.height - margin;
 
-    newLeft = clamp(newLeft, minX, maxX);
-    newTop  = clamp(newTop,  minY, maxY);
+    newX = clamp(newX, minX, maxX);
+    newY = clamp(newY, minY, maxY);
 
-    // do not overlap YES (convert YES rect into card coords)
-    const yesInCard = {
-      left: yesR.left - cardR.left,
-      top: yesR.top - cardR.top,
-      right: yesR.right - cardR.left,
-      bottom: yesR.bottom - cardR.top
+    // Never overlap YES
+    const candidate = {
+      left: cardR.left + newX,
+      top:  cardR.top + newY,
+      right: cardR.left + newX + noR.width,
+      bottom: cardR.top + newY + noR.height
     };
-
-    const cand = {
-      left: newLeft,
-      top: newTop,
-      right: newLeft + noW,
-      bottom: newTop + noH
-    };
-
-    const overlapsYes = !(cand.right < yesInCard.left || cand.left > yesInCard.right || cand.bottom < yesInCard.top || cand.top > yesInCard.bottom);
-
-    if (overlapsYes){
+    if (overlaps(candidate, yesR)) {
       // push horizontally away from YES
-      if (cand.left < yesInCard.left) newLeft = yesInCard.left - noW - 40;
-      else newLeft = yesInCard.right + 40;
-
-      newLeft = clamp(newLeft, minX, maxX);
+      if (candidate.left < yesR.left) newX = clamp(newX - 240, minX, maxX);
+      else newX = clamp(newX + 240, minX, maxX);
     }
 
-    no.style.left = newLeft + "px";
-    no.style.top  = newTop  + "px";
+    no.style.left = newX + "px";
+    no.style.top  = newY + "px";
   }
 
-  function showNoTray(){ noTray.classList.add("show"); }
-  function hideNoTray(){ noTray.classList.remove("show"); }
+  // The key: detect proximity, not hover.
+  card.addEventListener("mousemove", (e) => {
+    const noR = rect(no);
+    const mx = e.clientX;
+    const my = e.clientY;
 
-  // Hover behavior: show tray and run
-  no.addEventListener("mouseenter", (e) => {
-    showNoTray();
-    moveNoAwayFromMouse(e);
+    // distance from mouse to center of NO
+    const cx = noR.left + noR.width/2;
+    const cy = noR.top  + noR.height/2;
+    const dist = Math.hypot(cx - mx, cy - my);
+
+    // If you're getting close, it runs
+    const triggerRadius = 170; // bigger = harder to catch
+    if (dist < triggerRadius) {
+      runAway(mx, my);
+    }
   });
 
-  no.addEventListener("mousemove", (e) => {
-    moveNoAwayFromMouse(e);
-  });
-
-  no.addEventListener("mouseleave", () => {
-    hideNoTray();
-  });
-
-  // Clicking NO: show the message (but it still runs on hover)
+  // Clicking NO: show text behind it
   no.addEventListener("click", (e) => {
     e.preventDefault();
-    wrongMsg.classList.add("show");
-    setTimeout(()=> wrongMsg.classList.remove("show"), 1200);
+    const msg = document.createElement("div");
+    msg.textContent = "smh wrong answer vedanti";
+    msg.style.position = "absolute";
+    msg.style.left = (parseFloat(no.style.left) + 10) + "px";
+    msg.style.top  = (parseFloat(no.style.top) + 70) + "px";
+    msg.style.fontWeight = "800";
+    msg.style.opacity = "0.9";
+    card.appendChild(msg);
+    setTimeout(() => msg.remove(), 1400);
   });
 
-  // Clicking YES: go to YES screen
+  // YES click -> show result
   yes.addEventListener("click", ()=>{
-    hideNoTray();
     card.style.display="none";
     result.classList.add("show");
   });
 
-  // If window resizes after NO is detached, clamp it back inside
-  window.addEventListener("resize", () => {
-    if (!detached) return;
-    const noW = no.offsetWidth;
-    const noH = no.offsetHeight;
-    const margin = 18;
-
-    const minX = margin;
-    const maxX = card.clientWidth  - noW - margin;
-    const minY = margin;
-    const maxY = card.clientHeight - noH - margin;
-
-    const curLeft = parseFloat(no.style.left) || 0;
-    const curTop  = parseFloat(no.style.top)  || 0;
-
-    no.style.left = clamp(curLeft, minX, maxX) + "px";
-    no.style.top  = clamp(curTop,  minY, maxY) + "px";
-  });
+  // Init positions after layout paints
+  window.addEventListener("load", initNoPosition);
+  window.addEventListener("resize", initNoPosition);
 </script>
 
 </body>
