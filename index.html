@@ -41,19 +41,19 @@
     margin: 0;
   }
 
-  /* Keep YES fixed in place, and NO starts next to it */
-.btnRow{
-  position: absolute;
-  left: 50%;
-  top: 44%;
-  transform: translate(-50%, -50%); /* center the GROUP */
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 26px;
-  width: fit-content;              /* IMPORTANT */
-  z-index: 10;
-}
+  /* Center the GROUP (YES + ghost NO) */
+  .btnRow{
+    position: absolute;
+    left: 50%;
+    top: 44%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 26px;
+    width: fit-content;
+    z-index: 10;
+  }
 
   button{
     padding: 18px 42px;
@@ -74,16 +74,25 @@
     z-index: 60;
   }
 
-  /* NO will be absolute inside the card once we "activate" it */
+  /* REAL NO (the one that runs) */
   #no{
     background:#fff;
     border: 2px solid rgba(0,0,0,.15);
-    position: absolute;         /* important */
+    position: absolute;
     z-index: 55;
-    left: 0; top: 0;            /* set by JS */
+    left: 0; top: 0;
     transition:
       left 0.55s cubic-bezier(.16,1,.3,1),
       top  0.55s cubic-bezier(.16,1,.3,1);
+  }
+
+  /* GHOST NO: only used to make the row width include NO so the pair centers */
+  #noGhost{
+    background:#fff;
+    border: 2px solid rgba(0,0,0,.15);
+    box-shadow: 0 18px 34px rgba(0,0,0,.16);
+    opacity: 0;              /* invisible */
+    pointer-events: none;    /* can’t click/hover */
   }
 
   /* After YES screen */
@@ -146,9 +155,12 @@
 
     <div class="btnRow" id="btnRow">
       <button id="yes">Yes 😭💖</button>
-      <!-- NO is NOT in the flex row, it is absolutely positioned -->
+
+      <!-- NEW: invisible ghost NO so the YES+NO pair is truly centered -->
+      <button id="noGhost">No 😐</button>
     </div>
 
+    <!-- REAL NO (moves) -->
     <button id="no">No 😐</button>
   </div>
 
@@ -168,6 +180,7 @@
   const btnRow = document.getElementById("btnRow");
   const yes = document.getElementById("yes");
   const no  = document.getElementById("no");
+  const noGhost = document.getElementById("noGhost");
   const result = document.getElementById("result");
 
   function rect(el){ return el.getBoundingClientRect(); }
@@ -176,32 +189,18 @@
     return !(a.right<b.left || a.left>b.right || a.bottom<b.top || a.top>b.bottom);
   }
 
-  // Place NO initially next to YES (so it starts side-by-side)
-  function placeNoNextToYes(){
-    const cardR = rect(card);
-    const rowR  = rect(btnRow);
-    const yesR  = rect(yes);
-    const noR   = rect(no);
-
-    // Put NO to the right of YES with same vertical alignment as the row
-    const startX = (yesR.right - cardR.left) + 26; // gap
-    const startY = (rowR.top - cardR.left); // wrong axis guard (fixed below)
-  }
-
+  // Put REAL NO exactly where the ghost NO is (so it starts side-by-side and centered)
   function initNoPosition(){
     const cardR = rect(card);
-    const rowR  = rect(btnRow);
-    const yesR  = rect(yes);
-    const noR   = rect(no);
+    const ghostR = rect(noGhost);
 
-    const x = (yesR.right - cardR.left) + 26; // right of YES
-    const y = (rowR.top - cardR.top) + (rowR.height/2 - noR.height/2); // vertically centered on row
+    const x = ghostR.left - cardR.left;
+    const y = ghostR.top  - cardR.top;
 
     no.style.left = x + "px";
     no.style.top  = y + "px";
   }
 
-  // Run away behavior inside the white card
   function runAway(mouseClientX, mouseClientY){
     const cardR = rect(card);
     const noR = rect(no);
@@ -224,7 +223,6 @@
     const dist = Math.hypot(dx, dy) || 1;
     dx /= dist; dy /= dist;
 
-    // Step size
     const step = 180;
 
     let newX = nx + dx * step;
@@ -248,7 +246,6 @@
       bottom: cardR.top + newY + noR.height
     };
     if (overlaps(candidate, yesR)) {
-      // push horizontally away from YES
       if (candidate.left < yesR.left) newX = clamp(newX - 240, minX, maxX);
       else newX = clamp(newX + 240, minX, maxX);
     }
@@ -257,19 +254,17 @@
     no.style.top  = newY + "px";
   }
 
-  // The key: detect proximity, not hover.
+  // Proximity chase (same as your original)
   card.addEventListener("mousemove", (e) => {
     const noR = rect(no);
     const mx = e.clientX;
     const my = e.clientY;
 
-    // distance from mouse to center of NO
     const cx = noR.left + noR.width/2;
     const cy = noR.top  + noR.height/2;
     const dist = Math.hypot(cx - mx, cy - my);
 
-    // If you're getting close, it runs
-    const triggerRadius = 170; // bigger = harder to catch
+    const triggerRadius = 170;
     if (dist < triggerRadius) {
       runAway(mx, my);
     }
@@ -295,10 +290,10 @@
     result.classList.add("show");
   });
 
-  // Init positions after layout paints
   window.addEventListener("load", initNoPosition);
   window.addEventListener("resize", initNoPosition);
 </script>
 
 </body>
 </html>
+
