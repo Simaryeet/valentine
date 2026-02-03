@@ -1,175 +1,199 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Be My Valentine 💘</title>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Be My Valentine 🌹</title>
 
-  <style>
-    * { box-sizing: border-box; }
+<style>
+  * { box-sizing: border-box; }
 
-    body {
-      margin: 0;
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-      background: linear-gradient(135deg, #ffe4e6, #fff);
-      overflow: hidden;
-    }
+  body{
+    margin:0;
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    background: linear-gradient(135deg, #ffe4e6, #fff);
+    overflow:hidden;
+    padding: 28px;
+  }
 
-    .card {
-      position: relative;
-      background: white;
-      padding: 32px 24px 40px;
-      border-radius: 22px;
-      text-align: center;
-      width: min(420px, 90vw);
-      box-shadow: 0 20px 50px rgba(0,0,0,0.15);
-    }
+  .card{
+    position:relative;
+    background:white;
+    padding: 34px 26px 26px;
+    border-radius: 22px;
+    width: min(520px, 92vw);
+    text-align:center;
+    box-shadow: 0 20px 55px rgba(0,0,0,.14);
+  }
 
-    h1 {
-      margin: 0 0 12px;
-      font-size: 32px;
-    }
+  h1{
+    margin: 0 0 10px;
+    font-size: clamp(28px, 4vw, 44px);
+    letter-spacing: -0.02em;
+  }
 
-    p {
-      margin: 0 0 22px;
-      font-size: 18px;
-      opacity: 0.9;
-    }
+  p{
+    margin: 0 0 22px;
+    font-size: 18px;
+    opacity: .88;
+  }
 
-    .arena {
-      position: relative;
-      height: 110px;
-    }
+  /* Buttons */
+  .arena{
+    position: relative;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    gap: 16px;
+    margin-top: 10px;
+    height: 90px;
+  }
 
-    button {
-      padding: 14px 20px;
-      border-radius: 999px;
-      border: none;
-      font-size: 16px;
-      font-weight: 700;
-      cursor: pointer;
-      box-shadow: 0 10px 20px rgba(0,0,0,0.15);
-      user-select: none;
-    }
+  button{
+    padding: 14px 22px;
+    border-radius: 999px;
+    border: none;
+    font-size: 16px;
+    font-weight: 800;
+    cursor: pointer;
+    box-shadow: 0 12px 22px rgba(0,0,0,.12);
+    user-select:none;
+    transition: transform .12s ease;
+  }
 
-    #yes {
-      background: linear-gradient(90deg, #ff2d55, #ff7a9a);
-      color: white;
-    }
+  #yes{
+    background: linear-gradient(90deg, #ff2d55, #ff7a9a);
+    color: white;
+  }
+  #yes:hover{ transform: translateY(-1px); }
 
-    #no {
-      position: absolute;
-      background: white;
-      border: 1px solid rgba(0,0,0,0.15);
-      left: 50%;
-      top: 50%;
-      transform: translate(-50%, -50%);
-    }
+  #no{
+    background: white;
+    border: 1px solid rgba(0,0,0,.14);
+  }
 
-    #popup {
-      position: absolute;
-      top: -10px;
-      left: 50%;
-      transform: translate(-50%, -10px);
-      width: 160px;
-      height: 160px;
-      border-radius: 16px;
-      overflow: hidden;
-      box-shadow: 0 20px 40px rgba(0,0,0,0.25);
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.15s ease, transform 0.15s ease;
-    }
+  /* SLIDING DISAPPROVAL IMAGE */
+  #popup{
+    position:absolute;
+    top: 18px;
+    right: -180px; /* start hidden offscreen */
+    width: 160px;
+    height: 160px;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 18px 40px rgba(0,0,0,.22);
+    opacity: 0;
+    pointer-events:none;
+    transition:
+      right 0.45s cubic-bezier(.22,.61,.36,1),
+      opacity 0.25s ease;
+    border: 1px solid rgba(0,0,0,.10);
+    background: white;
+  }
 
-    #popup.show {
-      opacity: 1;
-      transform: translate(-50%, -30px);
-    }
+  #popup.show{
+    right: 16px;
+    opacity: 1;
+  }
 
-    #popup img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
+  #popup img{
+    width:100%;
+    height:100%;
+    object-fit: cover;
+    display:block;
+  }
 
-    #note {
-      margin-top: 14px;
-      font-size: 13px;
-      opacity: 0.75;
-    }
-  </style>
+  #note{
+    margin-top: 18px;
+    font-size: 13px;
+    opacity: .7;
+  }
+</style>
 </head>
 
 <body>
-  <div class="card">
-    <div id="popup">
-      <img src="disapproval.jpg" alt="Nope" />
-    </div>
 
-    <h1>Will you be my Valentine? 🌹</h1>
-    <p>Choose carefully 😌</p>
-
-    <div class="arena" id="arena">
-      <button id="yes">Yes 😭💖</button>
-      <button id="no">No 🙃</button>
-    </div>
-
-    <div id="note">(Try clicking “No”)</div>
+<div class="card">
+  <div id="popup">
+    <img src="disapproval.jpg" alt="disapproval" />
   </div>
 
-  <script>
-    const noBtn = document.getElementById("no");
-    const yesBtn = document.getElementById("yes");
-    const arena = document.getElementById("arena");
-    const popup = document.getElementById("popup");
-    const note = document.getElementById("note");
+  <h1>Will you be my Valentine? 🌹</h1>
+  <p>Choose carefully 😌</p>
 
-    function runAway() {
-      popup.classList.add("show");
+  <div class="arena" id="arena">
+    <button id="yes">Yes 😭💖</button>
+    <button id="no">No 😐</button>
+  </div>
 
-      const arenaRect = arena.getBoundingClientRect();
-      const btnRect = noBtn.getBoundingClientRect();
+  <div id="note">(Hover “No”)</div>
+</div>
 
-      const padding = 8;
-      const maxX = arenaRect.width - btnRect.width - padding * 2;
-      const maxY = arenaRect.height - btnRect.height - padding * 2;
+<script>
+  const noBtn = document.getElementById("no");
+  const yesBtn = document.getElementById("yes");
+  const arena = document.getElementById("arena");
+  const popup = document.getElementById("popup");
+  const note = document.getElementById("note");
 
-      const x = padding + Math.random() * maxX;
-      const y = padding + Math.random() * maxY;
+  let noIsAbsolute = false;
 
-      noBtn.style.left = x + "px";
-      noBtn.style.top = y + "px";
-      noBtn.style.transform = "translate(0,0)";
+  function showPopup() {
+    popup.classList.add("show");
+    clearTimeout(showPopup.t);
+    showPopup.t = setTimeout(() => {
+      popup.classList.remove("show");
+    }, 1200); // stays visible longer
+  }
 
-      clearTimeout(runAway.timer);
-      runAway.timer = setTimeout(() => popup.classList.remove("show"), 600);
+  function runAway() {
+    showPopup();
+
+    const arenaRect = arena.getBoundingClientRect();
+    const btnRect = noBtn.getBoundingClientRect();
+
+    if (!noIsAbsolute) {
+      noBtn.style.position = "absolute";
+      noIsAbsolute = true;
     }
 
-    noBtn.addEventListener("mouseenter", runAway);
-    noBtn.addEventListener("click", e => {
-      e.preventDefault();
-      runAway();
-    });
+    const padding = 8;
+    const maxX = arenaRect.width - btnRect.width - padding * 2;
+    const maxY = arenaRect.height - btnRect.height - padding * 2;
 
-    arena.addEventListener("mousemove", e => {
-      const b = noBtn.getBoundingClientRect();
-      const bx = b.left + b.width / 2;
-      const by = b.top + b.height / 2;
-      const dist = Math.hypot(e.clientX - bx, e.clientY - by);
-      if (dist < 90) runAway();
-    });
+    const x = padding + Math.random() * Math.max(0, maxX);
+    const y = padding + Math.random() * Math.max(0, maxY);
 
-    yesBtn.addEventListener("click", () => {
-      note.textContent = "YAY 😭💖 It’s a date.";
-      yesBtn.textContent = "Locked in ✅";
-      yesBtn.disabled = true;
-      noBtn.disabled = true;
-      popup.classList.remove("show");
-    });
-  </script>
+    noBtn.style.left = x + "px";
+    noBtn.style.top  = y + "px";
+  }
+
+  noBtn.addEventListener("mouseenter", runAway);
+  noBtn.addEventListener("click", e => {
+    e.preventDefault();
+    runAway();
+  });
+
+  arena.addEventListener("mousemove", e => {
+    const b = noBtn.getBoundingClientRect();
+    const bx = b.left + b.width / 2;
+    const by = b.top + b.height / 2;
+    const dist = Math.hypot(e.clientX - bx, e.clientY - by);
+    if (dist < 95) runAway();
+  });
+
+  yesBtn.addEventListener("click", () => {
+    note.textContent = "YAY 😭💖 It’s a date.";
+    yesBtn.textContent = "Locked in ✅";
+    yesBtn.disabled = true;
+    noBtn.disabled = true;
+    popup.classList.remove("show");
+  });
+</script>
+
 </body>
 </html>
