@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Be My Valentine 💘</title>
+
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      background: linear-gradient(135deg, #ffe4e6, #fff);
+      overflow: hidden;
+    }
+
+    .card {
+      position: relative;
+      background: white;
+      padding: 32px 24px 40px;
+      border-radius: 22px;
+      text-align: center;
+      width: min(420px, 90vw);
+      box-shadow: 0 20px 50px rgba(0,0,0,0.15);
+    }
+
+    h1 {
+      margin: 0 0 12px;
+      font-size: 32px;
+    }
+
+    p {
+      margin: 0 0 22px;
+      font-size: 18px;
+      opacity: 0.9;
+    }
+
+    .arena {
+      position: relative;
+      height: 110px;
+    }
+
+    button {
+      padding: 14px 20px;
+      border-radius: 999px;
+      border: none;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+      user-select: none;
+    }
+
+    #yes {
+      background: linear-gradient(90deg, #ff2d55, #ff7a9a);
+      color: white;
+    }
+
+    #no {
+      position: absolute;
+      background: white;
+      border: 1px solid rgba(0,0,0,0.15);
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+    }
+
+    #popup {
+      position: absolute;
+      top: -10px;
+      left: 50%;
+      transform: translate(-50%, -10px);
+      width: 160px;
+      height: 160px;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.25);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.15s ease, transform 0.15s ease;
+    }
+
+    #popup.show {
+      opacity: 1;
+      transform: translate(-50%, -30px);
+    }
+
+    #popup img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    #note {
+      margin-top: 14px;
+      font-size: 13px;
+      opacity: 0.75;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="card">
+    <div id="popup">
+      <img src="disapproval.jpg" alt="Nope" />
+    </div>
+
+    <h1>Will you be my Valentine? 🌹</h1>
+    <p>Choose carefully 😌</p>
+
+    <div class="arena" id="arena">
+      <button id="yes">Yes 😭💖</button>
+      <button id="no">No 🙃</button>
+    </div>
+
+    <div id="note">(Try clicking “No”)</div>
+  </div>
+
+  <script>
+    const noBtn = document.getElementById("no");
+    const yesBtn = document.getElementById("yes");
+    const arena = document.getElementById("arena");
+    const popup = document.getElementById("popup");
+    const note = document.getElementById("note");
+
+    function runAway() {
+      popup.classList.add("show");
+
+      const arenaRect = arena.getBoundingClientRect();
+      const btnRect = noBtn.getBoundingClientRect();
+
+      const padding = 8;
+      const maxX = arenaRect.width - btnRect.width - padding * 2;
+      const maxY = arenaRect.height - btnRect.height - padding * 2;
+
+      const x = padding + Math.random() * maxX;
+      const y = padding + Math.random() * maxY;
+
+      noBtn.style.left = x + "px";
+      noBtn.style.top = y + "px";
+      noBtn.style.transform = "translate(0,0)";
+
+      clearTimeout(runAway.timer);
+      runAway.timer = setTimeout(() => popup.classList.remove("show"), 600);
+    }
+
+    noBtn.addEventListener("mouseenter", runAway);
+    noBtn.addEventListener("click", e => {
+      e.preventDefault();
+      runAway();
+    });
+
+    arena.addEventListener("mousemove", e => {
+      const b = noBtn.getBoundingClientRect();
+      const bx = b.left + b.width / 2;
+      const by = b.top + b.height / 2;
+      const dist = Math.hypot(e.clientX - bx, e.clientY - by);
+      if (dist < 90) runAway();
+    });
+
+    yesBtn.addEventListener("click", () => {
+      note.textContent = "YAY 😭💖 It’s a date.";
+      yesBtn.textContent = "Locked in ✅";
+      yesBtn.disabled = true;
+      noBtn.disabled = true;
+      popup.classList.remove("show");
+    });
+  </script>
+</body>
+</html>
