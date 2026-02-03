@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Be My Valentine 🌹</title>
+<title>Be My Valentine </title>
 
 <style>
   * { box-sizing: border-box; }
@@ -28,6 +28,7 @@
     width: min(520px, 92vw);
     text-align:center;
     box-shadow: 0 20px 55px rgba(0,0,0,.14);
+    z-index: 2;
   }
 
   h1{
@@ -62,41 +63,46 @@
     cursor: pointer;
     box-shadow: 0 12px 22px rgba(0,0,0,.12);
     user-select:none;
-    transition: transform .12s ease;
   }
 
   #yes{
     background: linear-gradient(90deg, #ff2d55, #ff7a9a);
     color: white;
+    transition: transform .12s ease;
   }
   #yes:hover{ transform: translateY(-1px); }
 
   #no{
     background: white;
     border: 1px solid rgba(0,0,0,.14);
+    position: relative;
+    transition:
+      left 0.45s cubic-bezier(.22,.61,.36,1),
+      top 0.45s cubic-bezier(.22,.61,.36,1);
   }
 
-  /* SLIDING DISAPPROVAL IMAGE */
+  /* SLIDING IMAGE FROM LEFT BACKGROUND */
   #popup{
-    position:absolute;
-    top: 18px;
-    right: -180px; /* start hidden offscreen */
-    width: 160px;
-    height: 160px;
-    border-radius: 16px;
+    position: fixed;
+    left: -220px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 180px;
+    height: 180px;
+    border-radius: 18px;
     overflow: hidden;
-    box-shadow: 0 18px 40px rgba(0,0,0,.22);
+    box-shadow: 0 20px 45px rgba(0,0,0,.25);
     opacity: 0;
     pointer-events:none;
     transition:
-      right 0.45s cubic-bezier(.22,.61,.36,1),
+      left 0.5s cubic-bezier(.22,.61,.36,1),
       opacity 0.25s ease;
-    border: 1px solid rgba(0,0,0,.10);
     background: white;
+    z-index: 1;
   }
 
   #popup.show{
-    right: 16px;
+    left: 24px;
     opacity: 1;
   }
 
@@ -109,28 +115,28 @@
 
   #note{
     margin-top: 18px;
-    font-size: 13px;
-    opacity: .7;
+    font-size: 18px;
+    opacity: .6;
   }
 </style>
 </head>
 
 <body>
 
-<div class="card">
-  <div id="popup">
-    <img src="disapproval.jpg" alt="disapproval" />
-  </div>
+<div id="popup">
+  <img src="disapproval.jpg" alt="disapproval" />
+</div>
 
-  <h1>Will you be my Valentine? 🌹</h1>
-  <p>Choose carefully 😌</p>
+<div class="card">
+  <h1>Will you be my Valentine?🥹</h1>
+  <p>there’s only one right answer</p>
 
   <div class="arena" id="arena">
-    <button id="yes">Yes 😭💖</button>
-    <button id="no">No 😐</button>
+    <button id="yes">Yes😋</button>
+    <button id="no">No😐</button>
   </div>
 
-  <div id="note">(Hover “No”)</div>
+  <div id="note">😟</div>
 </div>
 
 <script>
@@ -142,26 +148,20 @@
 
   let noIsAbsolute = false;
 
-  function showPopup() {
-    popup.classList.add("show");
-    clearTimeout(showPopup.t);
-    showPopup.t = setTimeout(() => {
-      popup.classList.remove("show");
-    }, 1200); // stays visible longer
-  }
-
   function runAway() {
-    showPopup();
+    popup.classList.add("show");
 
     const arenaRect = arena.getBoundingClientRect();
     const btnRect = noBtn.getBoundingClientRect();
 
     if (!noIsAbsolute) {
       noBtn.style.position = "absolute";
+      noBtn.style.left = (btnRect.left - arenaRect.left) + "px";
+      noBtn.style.top  = (btnRect.top  - arenaRect.top)  + "px";
       noIsAbsolute = true;
     }
 
-    const padding = 8;
+    const padding = 12;
     const maxX = arenaRect.width - btnRect.width - padding * 2;
     const maxY = arenaRect.height - btnRect.height - padding * 2;
 
@@ -173,9 +173,9 @@
   }
 
   noBtn.addEventListener("mouseenter", runAway);
-  noBtn.addEventListener("click", e => {
-    e.preventDefault();
-    runAway();
+
+  noBtn.addEventListener("mouseleave", () => {
+    popup.classList.remove("show");
   });
 
   arena.addEventListener("mousemove", e => {
@@ -187,8 +187,8 @@
   });
 
   yesBtn.addEventListener("click", () => {
-    note.textContent = "YAY 😭💖 It’s a date.";
-    yesBtn.textContent = "Locked in ✅";
+    note.textContent = "😭";
+    yesBtn.textContent = "Ayeeeeeeeeeeeeeeee";
     yesBtn.disabled = true;
     noBtn.disabled = true;
     popup.classList.remove("show");
