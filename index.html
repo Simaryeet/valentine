@@ -8,7 +8,7 @@
 <style>
   * { box-sizing: border-box; }
 
-  /* HOT PINK BACKGROUND */
+  /* EXACT PINK */
   body{
     margin:0;
     min-height:100vh;
@@ -16,10 +16,9 @@
     align-items:center;
     justify-content:center;
     font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-    background: linear-gradient(135deg, #ff1493, #ff4fb8);
+    background: #ff9fb0;
     overflow:hidden;
     padding: 28px;
-    transition: transform 0.12s ease;
   }
 
   /* Whole-page movement when hovering NO */
@@ -64,9 +63,9 @@
     display:flex;
     justify-content:center;
     align-items:center;
-    gap: 16px;
+    gap: 18px;
     margin-top: 10px;
-    height: 110px; /* extra room so No can glide around */
+    height: 130px; /* more room so No can stay away */
   }
 
   button{
@@ -95,16 +94,17 @@
     transition:
       left 0.55s cubic-bezier(.22,.61,.36,1),
       top 0.55s cubic-bezier(.22,.61,.36,1);
+    z-index: 3;
   }
 
-  /* BIGGER IMAGE – slides from LEFT background */
+  /* BIG IMAGE – slides from LEFT background */
   #popup{
     position: fixed;
-    left: -360px;           /* offscreen left */
+    left: -360px;
     top: 50%;
     transform: translateY(-50%);
-    width: 300px;           /* bigger */
-    height: 300px;          /* bigger */
+    width: 300px;
+    height: 300px;
     border-radius: 22px;
     overflow: hidden;
     box-shadow: 0 25px 60px rgba(0,0,0,.35);
@@ -119,7 +119,7 @@
   }
 
   #popup.show{
-    left: 26px;             /* in view on left side */
+    left: 26px;
     opacity: 1;
   }
 
@@ -166,30 +166,82 @@
   let noIsAbsolute = false;
   let hoveringNo = false;
 
-  function moveNoSmoothly() {
+  function clamp(n, min, max){ return Math.max(min, Math.min(max, n)); }
+
+  function toArenaCoords(rect){
+    const a = arena.getBoundingClientRect();
+    return {
+      left: rect.left - a.left,
+      top: rect.top - a.top,
+      width: rect.width,
+      height: rect.height
+    };
+  }
+
+  function pickSafePosition(btnW, btnH){
+    const a = arena.getBoundingClientRect();
+    const yesRect = toArenaCoords(yesBtn.getBoundingClientRect());
+
+    const padding = 12;
+    const maxX = a.width - btnW - padding * 2;
+    const maxY = a.height - btnH - padding * 2;
+
+    // "keep away" zone around YES
+    const yesCenterX = yesRect.left + yesRect.width / 2;
+    const yesCenterY = yesRect.top + yesRect.height / 2;
+    const safeRadius = Math.max(120, yesRect.width); // bigger = farther from Yes
+
+    // Try a bunch of random spots until we find one far enough from YES
+    for (let i = 0; i < 40; i++){
+      const x = padding + Math.random() * Math.max(0, maxX);
+      const y = padding + Math.random() * Math.max(0, maxY);
+
+      const centerX = x + btnW / 2;
+      const centerY = y + btnH / 2;
+
+      const dist = Math.hypot(centerX - yesCenterX, centerY - yesCenterY);
+      if (dist >= safeRadius) return { x, y };
+    }
+
+    // Fallback: shove it to the farthest corner from YES
+    const candidates = [
+      { x: padding, y: padding },
+      { x: padding + Math.max(0, maxX), y: padding },
+      { x: padding, y: padding + Math.max(0, maxY) },
+      { x: padding + Math.max(0, maxX), y: padding + Math.max(0, maxY) }
+    ];
+
+    let best = candidates[0];
+    let bestD = -1;
+    for (const c of candidates){
+      const cx = c.x + btnW/2, cy = c.y + btnH/2;
+      const d = Math.hypot(cx - yesCenterX, cy - yesCenterY);
+      if (d > bestD){ bestD = d; best = c; }
+    }
+    return best;
+  }
+
+  function moveNoSmoothly(){
     const arenaRect = arena.getBoundingClientRect();
     const btnRect = noBtn.getBoundingClientRect();
 
     // Convert to absolute without teleporting
-    if (!noIsAbsolute) {
+    if (!noIsAbsolute){
       noBtn.style.position = "absolute";
       noBtn.style.left = (btnRect.left - arenaRect.left) + "px";
       noBtn.style.top  = (btnRect.top  - arenaRect.top)  + "px";
       noIsAbsolute = true;
     }
 
-    const padding = 12;
-    const maxX = arenaRect.width - btnRect.width - padding * 2;
-    const maxY = arenaRect.height - btnRect.height - padding * 2;
+    const btnW = btnRect.width;
+    const btnH = btnRect.height;
 
-    const x = padding + Math.random() * Math.max(0, maxX);
-    const y = padding + Math.random() * Math.max(0, maxY);
+    const pos = pickSafePosition(btnW, btnH);
 
-    noBtn.style.left = x + "px";
-    noBtn.style.top  = y + "px";
+    noBtn.style.left = pos.x + "px";
+    noBtn.style.top  = pos.y + "px";
   }
 
-  // Hover start: show image + move page + move button
   noBtn.addEventListener("mouseenter", () => {
     hoveringNo = true;
     popup.classList.add("show");
@@ -197,31 +249,29 @@
     moveNoSmoothly();
   });
 
-  // Hover end: HIDE IMMEDIATELY + stop page movement
   noBtn.addEventListener("mouseleave", () => {
     hoveringNo = false;
     popup.classList.remove("show");
     document.body.classList.remove("panic");
   });
 
-  // When cursor gets close, No moves (still smooth).
-  // Popup/page only happen if you're actually hovering No.
+  // When cursor gets close, No moves (stays away from YES).
   arena.addEventListener("mousemove", (e) => {
     const b = noBtn.getBoundingClientRect();
     const bx = b.left + b.width / 2;
     const by = b.top + b.height / 2;
     const dist = Math.hypot(e.clientX - bx, e.clientY - by);
 
-    if (dist < 95) {
+    if (dist < 95){
       moveNoSmoothly();
-      if (hoveringNo) {
+      if (hoveringNo){
         popup.classList.add("show");
         document.body.classList.add("panic");
       }
     }
   });
 
-  // Mobile tap fallback (optional)
+  // Mobile tap fallback
   noBtn.addEventListener("click", (e) => {
     e.preventDefault();
     moveNoSmoothly();
