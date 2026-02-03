@@ -21,34 +21,20 @@
     padding: 28px;
   }
 
-  /* Whole-page movement when hovering NO */
-  body.panic{
-    animation: panicMove 0.28s infinite alternate ease-in-out;
-  }
-
-  @keyframes panicMove{
-    0%   { transform: translate(0px, 0px); }
-    25%  { transform: translate(10px, -8px); }
-    50%  { transform: translate(-12px, 10px); }
-    75%  { transform: translate(8px, 12px); }
-    100% { transform: translate(-10px, -10px); }
-  }
-
   .card{
     position:relative;
     background: rgba(255,255,255,0.92);
     padding: 34px 26px 26px;
     border-radius: 22px;
-    width: min(520px, 92vw);
+    width: min(560px, 92vw);
     text-align:center;
     box-shadow: 0 20px 55px rgba(0,0,0,.18);
-    z-index: 2;
     backdrop-filter: blur(6px);
   }
 
   h1{
     margin: 0 0 10px;
-    font-size: clamp(28px, 4vw, 44px);
+    font-size: clamp(28px, 4vw, 48px);
     letter-spacing: -0.02em;
   }
 
@@ -58,6 +44,7 @@
     opacity: .9;
   }
 
+  /* Buttons row */
   .arena{
     position: relative;
     display:flex;
@@ -65,7 +52,7 @@
     align-items:center;
     gap: 18px;
     margin-top: 10px;
-    height: 130px; /* more room so No can stay away */
+    height: 140px; /* room for No to run */
   }
 
   button{
@@ -83,10 +70,12 @@
     background: linear-gradient(90deg, #ff2d55, #ff7a9a);
     color: white;
     transition: transform .12s ease;
+    position: relative;
+    z-index: 2;
   }
   #yes:hover{ transform: translateY(-1px); }
 
-  /* Smooth glide */
+  /* Smooth glide for No */
   #no{
     background: white;
     border: 1px solid rgba(0,0,0,.14);
@@ -97,7 +86,7 @@
     z-index: 3;
   }
 
-  /* BIG IMAGE – slides from LEFT background */
+  /* Bigger image slides from left background */
   #popup{
     position: fixed;
     left: -360px;
@@ -111,7 +100,7 @@
     opacity: 0;
     pointer-events:none;
     transition:
-      left 0.6s cubic-bezier(.22,.61,.36,1),
+      left 0.55s cubic-bezier(.22,.61,.36,1),
       opacity 0.18s ease;
     background: white;
     z-index: 1;
@@ -164,9 +153,6 @@
   const note = document.getElementById("note");
 
   let noIsAbsolute = false;
-  let hoveringNo = false;
-
-  function clamp(n, min, max){ return Math.max(min, Math.min(max, n)); }
 
   function toArenaCoords(rect){
     const a = arena.getBoundingClientRect();
@@ -186,24 +172,24 @@
     const maxX = a.width - btnW - padding * 2;
     const maxY = a.height - btnH - padding * 2;
 
-    // "keep away" zone around YES
     const yesCenterX = yesRect.left + yesRect.width / 2;
     const yesCenterY = yesRect.top + yesRect.height / 2;
-    const safeRadius = Math.max(120, yesRect.width); // bigger = farther from Yes
 
-    // Try a bunch of random spots until we find one far enough from YES
-    for (let i = 0; i < 40; i++){
+    // keep No away from Yes by at least this distance
+    const safeRadius = Math.max(160, yesRect.width + 80);
+
+    for (let i = 0; i < 50; i++){
       const x = padding + Math.random() * Math.max(0, maxX);
       const y = padding + Math.random() * Math.max(0, maxY);
 
-      const centerX = x + btnW / 2;
-      const centerY = y + btnH / 2;
+      const cx = x + btnW / 2;
+      const cy = y + btnH / 2;
 
-      const dist = Math.hypot(centerX - yesCenterX, centerY - yesCenterY);
+      const dist = Math.hypot(cx - yesCenterX, cy - yesCenterY);
       if (dist >= safeRadius) return { x, y };
     }
 
-    // Fallback: shove it to the farthest corner from YES
+    // fallback: farthest corner from Yes
     const candidates = [
       { x: padding, y: padding },
       { x: padding + Math.max(0, maxX), y: padding },
@@ -211,8 +197,7 @@
       { x: padding + Math.max(0, maxX), y: padding + Math.max(0, maxY) }
     ];
 
-    let best = candidates[0];
-    let bestD = -1;
+    let best = candidates[0], bestD = -1;
     for (const c of candidates){
       const cx = c.x + btnW/2, cy = c.y + btnH/2;
       const d = Math.hypot(cx - yesCenterX, cy - yesCenterY);
@@ -225,7 +210,7 @@
     const arenaRect = arena.getBoundingClientRect();
     const btnRect = noBtn.getBoundingClientRect();
 
-    // Convert to absolute without teleporting
+    // Convert to absolute without snapping
     if (!noIsAbsolute){
       noBtn.style.position = "absolute";
       noBtn.style.left = (btnRect.left - arenaRect.left) + "px";
@@ -233,42 +218,29 @@
       noIsAbsolute = true;
     }
 
-    const btnW = btnRect.width;
-    const btnH = btnRect.height;
-
-    const pos = pickSafePosition(btnW, btnH);
-
+    const pos = pickSafePosition(btnRect.width, btnRect.height);
     noBtn.style.left = pos.x + "px";
     noBtn.style.top  = pos.y + "px";
   }
 
+  // Hover No: show pic + run away
   noBtn.addEventListener("mouseenter", () => {
-    hoveringNo = true;
     popup.classList.add("show");
-    document.body.classList.add("panic");
     moveNoSmoothly();
   });
 
+  // Stop hovering No: hide pic immediately
   noBtn.addEventListener("mouseleave", () => {
-    hoveringNo = false;
     popup.classList.remove("show");
-    document.body.classList.remove("panic");
   });
 
-  // When cursor gets close, No moves (stays away from YES).
+  // If cursor gets close, No runs again
   arena.addEventListener("mousemove", (e) => {
     const b = noBtn.getBoundingClientRect();
     const bx = b.left + b.width / 2;
     const by = b.top + b.height / 2;
     const dist = Math.hypot(e.clientX - bx, e.clientY - by);
-
-    if (dist < 95){
-      moveNoSmoothly();
-      if (hoveringNo){
-        popup.classList.add("show");
-        document.body.classList.add("panic");
-      }
-    }
+    if (dist < 95) moveNoSmoothly();
   });
 
   // Mobile tap fallback
@@ -283,7 +255,12 @@
     yesBtn.disabled = true;
     noBtn.disabled = true;
     popup.classList.remove("show");
-    document.body.classList.remove("panic");
+  });
+
+  // OPTIONAL: on load, shove No away from Yes once (so it never starts too close)
+  window.addEventListener("load", () => {
+    // Make sure layout is ready, then move No once
+    setTimeout(() => moveNoSmoothly(), 50);
   });
 </script>
 
