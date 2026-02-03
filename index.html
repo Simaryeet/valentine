@@ -3,11 +3,12 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Be My Valentine </title>
+<title>Be My Valentine 🌹</title>
 
 <style>
   * { box-sizing: border-box; }
 
+  /* HOT PINK BACKGROUND */
   body{
     margin:0;
     min-height:100vh;
@@ -15,20 +16,35 @@
     align-items:center;
     justify-content:center;
     font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-    background: linear-gradient(135deg, #ffe4e6, #fff);
+    background: linear-gradient(135deg, #ff1493, #ff4fb8);
     overflow:hidden;
     padding: 28px;
+    transition: transform 0.12s ease;
+  }
+
+  /* Whole-page movement when hovering NO */
+  body.panic{
+    animation: panicMove 0.28s infinite alternate ease-in-out;
+  }
+
+  @keyframes panicMove{
+    0%   { transform: translate(0px, 0px); }
+    25%  { transform: translate(10px, -8px); }
+    50%  { transform: translate(-12px, 10px); }
+    75%  { transform: translate(8px, 12px); }
+    100% { transform: translate(-10px, -10px); }
   }
 
   .card{
     position:relative;
-    background:white;
+    background: rgba(255,255,255,0.92);
     padding: 34px 26px 26px;
     border-radius: 22px;
     width: min(520px, 92vw);
     text-align:center;
-    box-shadow: 0 20px 55px rgba(0,0,0,.14);
+    box-shadow: 0 20px 55px rgba(0,0,0,.18);
     z-index: 2;
+    backdrop-filter: blur(6px);
   }
 
   h1{
@@ -40,10 +56,9 @@
   p{
     margin: 0 0 22px;
     font-size: 18px;
-    opacity: .88;
+    opacity: .9;
   }
 
-  /* Buttons */
   .arena{
     position: relative;
     display:flex;
@@ -51,7 +66,7 @@
     align-items:center;
     gap: 16px;
     margin-top: 10px;
-    height: 90px;
+    height: 110px; /* extra room so No can glide around */
   }
 
   button{
@@ -72,37 +87,39 @@
   }
   #yes:hover{ transform: translateY(-1px); }
 
+  /* Smooth glide */
   #no{
     background: white;
     border: 1px solid rgba(0,0,0,.14);
     position: relative;
     transition:
-      left 0.45s cubic-bezier(.22,.61,.36,1),
-      top 0.45s cubic-bezier(.22,.61,.36,1);
+      left 0.55s cubic-bezier(.22,.61,.36,1),
+      top 0.55s cubic-bezier(.22,.61,.36,1);
   }
 
-  /* SLIDING IMAGE FROM LEFT BACKGROUND */
+  /* BIGGER IMAGE – slides from LEFT background */
   #popup{
     position: fixed;
-    left: -220px;
+    left: -360px;           /* offscreen left */
     top: 50%;
     transform: translateY(-50%);
-    width: 180px;
-    height: 180px;
-    border-radius: 18px;
+    width: 300px;           /* bigger */
+    height: 300px;          /* bigger */
+    border-radius: 22px;
     overflow: hidden;
-    box-shadow: 0 20px 45px rgba(0,0,0,.25);
+    box-shadow: 0 25px 60px rgba(0,0,0,.35);
     opacity: 0;
     pointer-events:none;
     transition:
-      left 0.5s cubic-bezier(.22,.61,.36,1),
-      opacity 0.25s ease;
+      left 0.6s cubic-bezier(.22,.61,.36,1),
+      opacity 0.18s ease;
     background: white;
     z-index: 1;
+    border: 2px solid rgba(255,255,255,.35);
   }
 
   #popup.show{
-    left: 24px;
+    left: 26px;             /* in view on left side */
     opacity: 1;
   }
 
@@ -116,7 +133,7 @@
   #note{
     margin-top: 18px;
     font-size: 18px;
-    opacity: .6;
+    opacity: .7;
   }
 </style>
 </head>
@@ -128,12 +145,12 @@
 </div>
 
 <div class="card">
-  <h1>Will you be my Valentine?🥹</h1>
+  <h1>Will you be my Valentine? 🌹</h1>
   <p>there’s only one right answer</p>
 
   <div class="arena" id="arena">
-    <button id="yes">Yes😋</button>
-    <button id="no">No😐</button>
+    <button id="yes">Yes 😭💖</button>
+    <button id="no">No 😐</button>
   </div>
 
   <div id="note">😟</div>
@@ -147,13 +164,13 @@
   const note = document.getElementById("note");
 
   let noIsAbsolute = false;
+  let hoveringNo = false;
 
-  function runAway() {
-    popup.classList.add("show");
-
+  function moveNoSmoothly() {
     const arenaRect = arena.getBoundingClientRect();
     const btnRect = noBtn.getBoundingClientRect();
 
+    // Convert to absolute without teleporting
     if (!noIsAbsolute) {
       noBtn.style.position = "absolute";
       noBtn.style.left = (btnRect.left - arenaRect.left) + "px";
@@ -172,26 +189,51 @@
     noBtn.style.top  = y + "px";
   }
 
-  noBtn.addEventListener("mouseenter", runAway);
-
-  noBtn.addEventListener("mouseleave", () => {
-    popup.classList.remove("show");
+  // Hover start: show image + move page + move button
+  noBtn.addEventListener("mouseenter", () => {
+    hoveringNo = true;
+    popup.classList.add("show");
+    document.body.classList.add("panic");
+    moveNoSmoothly();
   });
 
-  arena.addEventListener("mousemove", e => {
+  // Hover end: HIDE IMMEDIATELY + stop page movement
+  noBtn.addEventListener("mouseleave", () => {
+    hoveringNo = false;
+    popup.classList.remove("show");
+    document.body.classList.remove("panic");
+  });
+
+  // When cursor gets close, No moves (still smooth).
+  // Popup/page only happen if you're actually hovering No.
+  arena.addEventListener("mousemove", (e) => {
     const b = noBtn.getBoundingClientRect();
     const bx = b.left + b.width / 2;
     const by = b.top + b.height / 2;
     const dist = Math.hypot(e.clientX - bx, e.clientY - by);
-    if (dist < 95) runAway();
+
+    if (dist < 95) {
+      moveNoSmoothly();
+      if (hoveringNo) {
+        popup.classList.add("show");
+        document.body.classList.add("panic");
+      }
+    }
+  });
+
+  // Mobile tap fallback (optional)
+  noBtn.addEventListener("click", (e) => {
+    e.preventDefault();
+    moveNoSmoothly();
   });
 
   yesBtn.addEventListener("click", () => {
-    note.textContent = "😭";
-    yesBtn.textContent = "Ayeeeeeeeeeeeeeeee";
+    note.textContent = "😭💖";
+    yesBtn.textContent = "Locked in ✅";
     yesBtn.disabled = true;
     noBtn.disabled = true;
     popup.classList.remove("show");
+    document.body.classList.remove("panic");
   });
 </script>
 
