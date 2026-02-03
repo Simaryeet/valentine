@@ -42,17 +42,17 @@
   }
 
   /* Keep YES fixed in place, and NO starts next to it */
-  .btnRow{
-    position: absolute;
-    left: 50%;
-    top: 43%;
-    transform: translate(-50%, -50%);
-    display:flex;
-    gap: 26px;
-    align-items:center;
-    justify-content:center;
-    z-index: 50;
-  }
+.btnRow{
+  position: absolute;
+  left: 50%;
+  top: 43%;
+  transform: translateX(-50%); /* center the GROUP, not Yes */
+  display:flex;
+  gap: 26px;
+  align-items:center;
+  justify-content:center;
+  z-index: 50;
+}
 
   button{
     padding: 18px 42px;
